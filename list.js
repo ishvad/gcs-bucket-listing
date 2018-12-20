@@ -2,13 +2,8 @@ if (typeof AUTO_TITLE != 'undefined' && AUTO_TITLE == true) {
   document.title = location.hostname;
 }
 
-if (typeof S3_REGION != 'undefined') {
-  var BUCKET_URL = 'http://' + location.hostname + '.' + S3_REGION + '.amazonaws.com'; // e.g. just 's3' for us-east-1 region
-  var BUCKET_WEBSITE_URL = location.protocol + '//' + location.hostname;
-}
-
-if (typeof S3BL_IGNORE_PATH == 'undefined' || S3BL_IGNORE_PATH != true) {
-  var S3BL_IGNORE_PATH = false;
+if (typeof GCSBL_IGNORE_PATH == 'undefined' || GCSBL_IGNORE_PATH != true) {
+  var GCSBL_IGNORE_PATH = false;
 }
 
 if (typeof BUCKET_URL == 'undefined') {
@@ -27,12 +22,12 @@ if (typeof BUCKET_WEBSITE_URL == 'undefined') {
   var BUCKET_WEBSITE_URL = BUCKET_URL;
 }
 
-if (typeof S3B_ROOT_DIR == 'undefined') {
-  var S3B_ROOT_DIR = '';
+if (typeof GCSB_ROOT_DIR == 'undefined') {
+  var GCSB_ROOT_DIR = '';
 }
 
-if (typeof S3B_SORT == 'undefined') {
-  var S3B_SORT = 'DEFAULT';
+if (typeof GCSB_SORT == 'undefined') {
+  var GCSB_SORT = 'DEFAULT';
 }
 
 if (typeof EXCLUDE_FILE == 'undefined') {
@@ -65,7 +60,7 @@ if (!Array.prototype.includes) {
       //    (If fromIndex is undefined, this step produces the value 0.)
       var n = fromIndex | 0;
 
-      // 5. If n ≥ 0, then
+      // 5. If n â‰¥ 0, then
       //  a. Let k be n.
       // 6. Else n < 0,
       //  a. Let k be len + n.
@@ -83,7 +78,7 @@ if (!Array.prototype.includes) {
         if (sameValueZero(o[k], searchElement)) {
           return true;
         }
-        // c. Increase k by 1. 
+        // c. Increase k by 1.
         k++;
       }
 
@@ -98,7 +93,7 @@ jQuery(function($) { getS3Data(); });
 // This will sort your file listing by most recently modified.
 // Flip the comparator to '>' if you want oldest files first.
 function sortFunction(a, b) {
-  switch (S3B_SORT) {
+  switch (GCSB_SORT) {
     case "OLD2NEW":
       return a.LastModified > b.LastModified ? 1 : -1;
     case "NEW2OLD":
@@ -115,11 +110,11 @@ function sortFunction(a, b) {
 }
 
 function getS3Data(marker, html) {
-  var s3_rest_url = createS3QueryUrl(marker);
+  var gcs_rest_url = createS3QueryUrl(marker);
   // set loading notice
   $('#listing')
-      .html('<img src="//assets.okfn.org/images/icons/ajaxload-circle.gif" />');
-  $.get(s3_rest_url)
+      .html('<img src="/circle.gif" />');
+  $.get(gcs_rest_url)
       .done(function(data) {
         // clear loading notice
         $('#listing').html('');
@@ -127,10 +122,10 @@ function getS3Data(marker, html) {
         var info = getInfoFromS3Data(xml);
 
         // Slight modification by FuzzBall03
-        // This will sort your file listing based on var S3B_SORT
+        // This will sort your file listing based on var GCSB_SORT
         // See url for example:
         // http://esp-link.s3-website-us-east-1.amazonaws.com/
-        if (S3B_SORT != 'DEFAULT') {
+        if (GCSB_SORT != 'DEFAULT') {
           var sortedFiles = info.files;
           sortedFiles.sort(sortFunction);
           info.files = sortedFiles;
@@ -154,13 +149,13 @@ function getS3Data(marker, html) {
 }
 
 function buildNavigation(info) {
-  var root = '<a href="?prefix=">' + BUCKET_WEBSITE_URL + '</a> / ';
+  var root = '<a href="/">' + location.hostname + '</a> / ';
   if (info.prefix) {
     var processedPathSegments = '';
     var content = $.map(info.prefix.split('/'), function(pathSegment) {
       processedPathSegments =
           processedPathSegments + encodeURIComponent(pathSegment) + '/';
-      return '<a href="?prefix=' + processedPathSegments + '">' + pathSegment +
+      return '<a href="/' + processedPathSegments + '">' + pathSegment +
              '</a>';
     });
     $('#navigation').html(root + content.join(' / '));
@@ -170,45 +165,31 @@ function buildNavigation(info) {
 }
 
 function createS3QueryUrl(marker) {
-  var s3_rest_url = BUCKET_URL;
-  s3_rest_url += '?delimiter=/';
+  var gcs_rest_url = BUCKET_URL;
+  gcs_rest_url += '?delimiter=/';
 
-  //
-  // Handling paths and prefixes:
-  //
-  // 1. S3BL_IGNORE_PATH = false
-  // Uses the pathname
-  // {bucket}/{path} => prefix = {path}
-  //
-  // 2. S3BL_IGNORE_PATH = true
-  // Uses ?prefix={prefix}
-  //
-  // Why both? Because we want classic directory style listing in normal
-  // buckets but also allow deploying to non-buckets
-  //
-
-  var rx = '.*[?&]prefix=' + S3B_ROOT_DIR + '([^&]+)(&.*)?$';
+  var rx = '.*[?&]prefix=' + GCSB_ROOT_DIR + '([^&]+)(&.*)?$';
   var prefix = '';
-  if (S3BL_IGNORE_PATH == false) {
-    var prefix = location.pathname.replace(/^\//, S3B_ROOT_DIR);
+  if (GCSBL_IGNORE_PATH == false) {
+    var prefix = location.pathname.replace(/^\//, GCSB_ROOT_DIR);
   }
   var match = location.search.match(rx);
   if (match) {
-    prefix = S3B_ROOT_DIR + match[1];
+    prefix = GCSB_ROOT_DIR + match[1];
   } else {
-    if (S3BL_IGNORE_PATH) {
-      var prefix = S3B_ROOT_DIR;
+    if (GCSBL_IGNORE_PATH) {
+      var prefix = GCSB_ROOT_DIR;
     }
   }
   if (prefix) {
     // make sure we end in /
     var prefix = prefix.replace(/\/$/, '') + '/';
-    s3_rest_url += '&prefix=' + prefix;
+    gcs_rest_url += '&prefix=' + prefix;
   }
   if (marker) {
-    s3_rest_url += '&marker=' + marker;
+    gcs_rest_url += '&marker=' + marker;
   }
-  return s3_rest_url;
+  return gcs_rest_url;
 }
 
 function getInfoFromS3Data(xml) {
@@ -219,7 +200,8 @@ function getInfoFromS3Data(xml) {
       Key: item.find('Key').text(),
           LastModified: item.find('LastModified').text(),
           Size: bytesToHumanReadable(item.find('Size').text()),
-          Type: 'file'
+          Type: 'file',
+          ETag: item.find('ETag').text()
     }
     // clang-format on
   });
@@ -229,7 +211,8 @@ function getInfoFromS3Data(xml) {
     return {
       Key: item.find('Prefix').text(),
         LastModified: '',
-        Size: '0',
+        ETag: '',
+        Size: '-',
         Type: 'directory'
     }
     // clang-format on
@@ -264,16 +247,17 @@ function prepareTable(info) {
   content.push(new Array(cols[0] + cols[1] + cols[2] + 4).join('-') + '\n');
 
   // add ../ at the start of the dir listing, unless we are already at root dir
-  if (prefix && prefix !== S3B_ROOT_DIR) {
+  if (prefix && prefix !== GCSB_ROOT_DIR) {
     var up = prefix.replace(/\/$/, '').split('/').slice(0, -1).concat('').join(
             '/'),  // one directory up
         item =
             {
               Key: up,
               LastModified: '',
+              ETag: '',
               Size: '',
               keyText: '../',
-              href: S3BL_IGNORE_PATH ? '?prefix=' + up : '../'
+              href: GCSBL_IGNORE_PATH ? '?prefix=' + up : '../'
             },
         row = renderRow(item, cols);
     content.push(row + '\n');
@@ -283,15 +267,16 @@ function prepareTable(info) {
     // strip off the prefix
     item.keyText = item.Key.substring(prefix.length);
     if (item.Type === 'directory') {
-      if (S3BL_IGNORE_PATH) {
+      if (GCSBL_IGNORE_PATH) {
         item.href = location.protocol + '//' + location.hostname +
                     location.pathname + '?prefix=' + item.Key;
       } else {
         item.href = item.keyText;
       }
     } else {
-      item.href = BUCKET_WEBSITE_URL + '/' + encodeURIComponent(item.Key);
-      item.href = item.href.replace(/%2F/g, '/');
+//      item.href = BUCKET_WEBSITE_URL + '/' + encodeURIComponent(item.Key);
+//      item.href = item.href.replace(/%2F/g, '/');
+      item.href = item.keyText;
     }
     var row = renderRow(item, cols);
     if (!EXCLUDE_FILE.includes(item.Key))
