@@ -113,7 +113,7 @@ function getS3Data(marker, html) {
   var gcs_rest_url = createS3QueryUrl(marker);
   // set loading notice
   $('#listing')
-      .html('<img src="/circle.gif" />');
+      .html('<img src="https://ishvad.github.io/gcs-bucket-listing/circle.gif" />');
   $.get(gcs_rest_url)
       .done(function(data) {
         // clear loading notice
