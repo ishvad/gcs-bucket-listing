@@ -67,7 +67,7 @@ This will disallow navigation shallower than your set directory.
 Note that this only disallows navigation to shallower directories, but __NOT__ access. Any person with knowledge of the existence of bucket XML listings will be able to manually access those files.
 
 
-### `S3B_SORT` variable
+### `GCSB_SORT` variable
 
 This will sort your bucket listing. Variable options should be self-explanatory.
 
