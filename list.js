@@ -18,9 +18,6 @@ if (typeof BUCKET_NAME != 'undefined') {
   }
 }
 
-if (typeof BUCKET_WEBSITE_URL == 'undefined') {
-  var BUCKET_WEBSITE_URL = BUCKET_URL;
-}
 
 if (typeof GCSB_ROOT_DIR == 'undefined') {
   var GCSB_ROOT_DIR = '';
@@ -274,8 +271,6 @@ function prepareTable(info) {
         item.href = item.keyText;
       }
     } else {
-//      item.href = BUCKET_WEBSITE_URL + '/' + encodeURIComponent(item.Key);
-//      item.href = item.href.replace(/%2F/g, '/');
       item.href = item.keyText;
     }
     var row = renderRow(item, cols);
