@@ -89,3 +89,15 @@ This variable is optional.  It allows you to exclude a file (e.g. index.html) or
 ### `AUTO_TITLE` variable
 
 This variable is optional.  It allows you to automatically set the title.
+
+### `GCSBL_IGNORE_PATH` variable
+
+Valid options = `false` (default) or `true`
+
+Setting this to false will cause URL navigation to be in this form:
+- _`https://storage.googleapis.com/[BUCKET_NAME]/subfolder/`_
+
+You will have to put the html code in your page html AND your error 404 document.
+
+Setting this to true will cause URL navigation to be in this form:
+- _`https://storage.googleapis.com/[BUCKET_NAME]/?prefix=subfolder/`_
