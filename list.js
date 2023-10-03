@@ -149,6 +149,9 @@ function buildNavigation(info) {
   var root = '<a href="/">' + location.hostname + '</a> / ';
   if (info.prefix) {
     var processedPathSegments = '';
+    if (GCSBL_IGNORE_PATH) {
+      processedPathSegments = '?prefix='
+    }
     var content = $.map(info.prefix.split('/'), function(pathSegment) {
       processedPathSegments =
           processedPathSegments + encodeURIComponent(pathSegment) + '/';
@@ -271,7 +274,7 @@ function prepareTable(info) {
         item.href = item.keyText;
       }
     } else {
-      item.href = item.keyText;
+      item.href = '/' + item.Key;
     }
     var row = renderRow(item, cols);
     if (!EXCLUDE_FILE.includes(item.Key))
